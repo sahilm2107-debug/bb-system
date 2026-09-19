@@ -49,9 +49,11 @@ export default function InventoryPage() {
 
   async function loadItems() {
     setLoading(true);
-    const params = new URLSearchParams({ database });
+    const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
+    const params = new URLSearchParams({ database, branch });
     if (category) params.set("category", category);
     if (q) params.set("q", q);
+    
     const res = await fetch(`/api/inventory?${params.toString()}`);
     const data = await res.json();
     setItems(data.items || []);
@@ -69,11 +71,14 @@ export default function InventoryPage() {
   async function handleAddItem(e) {
     e.preventDefault();
     setFormError("");
+    const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
+    
     const res = await fetch("/api/inventory", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, database }),
+      body: JSON.stringify({ ...form, database, branch }),
     });
+    
     const data = await res.json();
     if (!res.ok) {
       setFormError(data.error || "Couldn't add that item.");
@@ -89,12 +94,20 @@ export default function InventoryPage() {
     if (!file) return;
     setImportMessage("Reading file…");
     const text = await file.text();
-    const rows = parseCsv(text).map((r) => ({ ...r, database: r.database || database }));
+    const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
+    
+    const rows = parseCsv(text).map((r) => ({ 
+      ...r, 
+      database: r.database || database,
+      branch // Tag uploaded CSV items to the active branch
+    }));
+    
     const res = await fetch("/api/inventory", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bulk: rows }),
     });
+    
     const data = await res.json();
     if (!res.ok) {
       setImportMessage(data.error || "Import failed.");

@@ -36,14 +36,16 @@ export default function AutomationPage() {
   const [testSubmitting, setTestSubmitting] = useState(false);
 
   async function loadMessages() {
-    const res = await fetch("/api/automation/messages");
+    const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
+    const res = await fetch(`/api/automation/messages?branch=${branch}`);
     const data = await res.json();
     setMessages(data.messages || []);
     setLoading(false);
   }
 
   async function loadCutlistRequests() {
-    const res = await fetch("/api/automation/cutlist");
+    const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
+    const res = await fetch(`/api/automation/cutlist?branch=${branch}`);
     const data = await res.json();
     setCutlistRequests(data.requests || []);
     setCutlistLoading(false);
@@ -51,7 +53,8 @@ export default function AutomationPage() {
 
   async function runSlaCheck() {
     setChecking(true);
-    const res = await fetch("/api/automation/sla-check", { method: "POST" });
+    const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
+    const res = await fetch(`/api/automation/sla-check?branch=${branch}`, { method: "POST" });
     const data = await res.json();
     setLastCheck(data);
     setChecking(false);
@@ -71,11 +74,14 @@ export default function AutomationPage() {
     e.preventDefault();
     setTestError("");
     setTestSubmitting(true);
+    const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
+    
     const res = await fetch("/api/automation/cutlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rawText: testText, source: "manual" }),
+      body: JSON.stringify({ rawText: testText, source: "manual", branch }),
     });
+    
     const data = await res.json();
     setTestSubmitting(false);
     if (!res.ok) {
@@ -100,8 +106,6 @@ export default function AutomationPage() {
     fetch("/api/auth/me").then((r) => r.json()).then((d) => setUser(d.user));
     loadMessages();
     loadCutlistRequests();
-    // Poll the SLA monitor every 30s while this tab is open — a real
-    // deployment would run this as a server-side cron job instead.
     const interval = setInterval(runSlaCheck, 30000);
     return () => clearInterval(interval);
   }, []);
