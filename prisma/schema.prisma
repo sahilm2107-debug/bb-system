@@ -3,44 +3,36 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
-// ---------------------------------------------------------------
-// Access is limited to exactly 5 admin accounts (enforced in the
-// /api/auth/register route, not just here) — Member IDs 001-005.
-// ---------------------------------------------------------------
 model User {
-  id               String   @id @default(cuid())
-  memberId         String   @unique // "001".."005"
+  id               String    @id @default(cuid())
+  memberId         String    @unique
   name             String
-  username         String   @unique
+  username         String    @unique
   passwordHash     String
-  role             String   @default("admin")
+  role             String    @default("admin")
   resetToken       String?
   resetTokenExpiry DateTime?
-  createdAt        DateTime @default(now())
+  createdAt        DateTime  @default(now())
 }
 
-// database: "boards" | "hardware"
-// category examples -
-//   boards:   Gloss, Texture/Alpine, 600mm Tops, 900mm Tops, Granite, Masonite
-//   hardware: Handles, Screws, Wall Claddings/Panels, Loose Edgings, Sinks,
-//              Glues, Silicones, Hinges, Runners, Legs
 model InventoryItem {
-  id         String   @id @default(cuid())
-  tagNumber  String   @unique
-  name       String
-  database   String
-  category   String
-  quantity   Int      @default(0)
-  unit       String?
-  price      Float?
-  supplier   String?
-  notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  tagNumber String   @unique
+  name      String
+  database  String
+  category  String
+  quantity  Int      @default(0)
+  unit      String?
+  price     Float?
+  supplier  String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([database, category])
   @@index([name])
@@ -50,7 +42,7 @@ model Order {
   id            String    @id @default(cuid())
   customerName  String
   customerPhone String?
-  status        String    @default("pending") // pending | answered | completed | cancelled
+  status        String    @default("pending")
   channel       String    @default("whatsapp")
   summary       String?
   createdAt     DateTime  @default(now())
@@ -67,51 +59,43 @@ model Task {
   createdAt   DateTime  @default(now())
 }
 
-// Represents an inbound WhatsApp message the Phase 1 SLA monitor watches.
-// status: unanswered | answered | escalated
 model WhatsAppMessage {
-  id           String    @id @default(cuid())
-  fromNumber   String
-  fromName     String?
-  body         String
-  direction    String    @default("inbound")
-  status       String    @default("unanswered")
-  receivedAt   DateTime  @default(now())
-  answeredAt   DateTime?
-  escalatedAt  DateTime?
-  orderId      String?
+  id          String    @id @default(cuid())
+  fromNumber  String
+  fromName    String?
+  body        String
+  direction   String    @default("inbound")
+  status      String    @default("unanswered")
+  receivedAt  DateTime  @default(now())
+  answeredAt  DateTime?
+  escalatedAt DateTime?
+  orderId     String?
 }
 
-// type: sla_breach | low_confidence | general
 model Notification {
-  id                String   @id @default(cuid())
-  type              String
-  message           String
-  read              Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  relatedMessageId  String?
+  id               String   @id @default(cuid())
+  type             String
+  message          String
+  read             Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  relatedMessageId String?
 }
 
-// ---------------------------------------------------------------
-// Employee Summary — daily attendance + boards cut/edged per person.
-// ---------------------------------------------------------------
 model Employee {
   id           String         @id @default(cuid())
-  employeeCode String         @unique // e.g. "EMP-01"
+  employeeCode String         @unique
   name         String
-  role         String? // e.g. "Cutter", "Edger", "General"
+  role         String?
   active       Boolean        @default(true)
   createdAt    DateTime       @default(now())
   logs         DailyWorkLog[]
 }
 
-// One row per employee per day. Upserted from the Employee Summary page
-// so re-saving the same day updates it instead of duplicating it.
 model DailyWorkLog {
   id          String   @id @default(cuid())
   employeeId  String
   employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  date        DateTime // stored at midnight UTC for the given calendar day
+  date        DateTime
   present     Boolean  @default(true)
   boardsCut   Int      @default(0)
   boardsEdged Int      @default(0)
@@ -123,24 +107,14 @@ model DailyWorkLog {
   @@index([date])
 }
 
-// ---------------------------------------------------------------
-// Automation Phase 2 fundamentals — cutlist generation.
-// A CutlistRequest is created from a parsed customer/carpenter message
-// (or, until the real AI parser is built, a manual test entry on the
-// Automation page). It holds one or more CutlistItem rows, gets a CSV
-// exported for the Cutlist software, and then waits for a human admin
-// to confirm or reject it before it's considered final.
-//
-// status flow: draft -> pending_confirmation -> confirmed | rejected
-// ---------------------------------------------------------------
 model CutlistRequest {
   id               String        @id @default(cuid())
-  source           String        @default("manual") // "whatsapp" | "manual"
+  source           String        @default("manual")
   customerName     String?
   customerPhone    String?
-  rawText          String // the original message the request was built from
+  rawText          String
   status           String        @default("draft")
-  confidence       Float? // 0-1; low confidence should route to human fallback
+  confidence       Float?
   csvExportedAt    DateTime?
   confirmedAt      DateTime?
   rejectedAt       DateTime?
@@ -151,16 +125,16 @@ model CutlistRequest {
 }
 
 model CutlistItem {
-  id                String         @id @default(cuid())
-  cutlistRequestId  String
-  cutlistRequest    CutlistRequest @relation(fields: [cutlistRequestId], references: [id], onDelete: Cascade)
-  lengthMm          Float
-  widthMm           Float
-  thicknessMm       Float?
-  quantity          Int            @default(1)
-  material          String?
-  edgingLongCount   Int            @default(0)
-  edgingShortCount  Int            @default(0)
-  edgingLabel       String?
-  notes             String?
+  id               String         @id @default(cuid())
+  cutlistRequestId String
+  cutlistRequest   CutlistRequest @relation(fields: [cutlistRequestId], references: [id], onDelete: Cascade)
+  lengthMm         Float
+  widthMm          Float
+  thicknessMm      Float?
+  quantity         Int            @default(1)
+  material         String?
+  edgingLongCount  Int            @default(0)
+  edgingShortCount Int            @default(0)
+  edgingLabel      String?
+  notes            String?
 }
