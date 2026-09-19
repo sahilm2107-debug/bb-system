@@ -1,0 +1,173 @@
+@import url("https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap");
+
+/* ---------------------------------------------------------------------
+   Design tokens — B&B System
+   Inspired by a timber yard's paper order docket: kraft paper, stamped
+   crate lettering, and hazard-tape yellow for anything that needs eyes
+   on it. Hard edges, not rounded SaaS cards; a stamped slab display face
+   next to a plain working sans.
+------------------------------------------------------------------------ */
+:root {
+  --paper: #efe7d6;
+  --paper-raised: #f7f1e4;
+  --ink: #2a251d;
+  --ink-soft: #5b5347;
+  --walnut: #5c3a22;
+  --walnut-dark: #402813;
+  --hazard: #e8a400;
+  --hazard-ink: #2a251d;
+  --rust: #b23b23;
+  --sage: #4b6b45;
+  --line: #d9cdb2;
+  --line-strong: #2a251d;
+
+  --font-display: "Zilla Slab", Georgia, serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+/* Shared "docket" surface: a hard-edged card with a stamped corner tab,
+   used instead of the generic soft-shadow rounded card. */
+.docket {
+  background: var(--paper-raised);
+  border: 2px solid var(--line-strong);
+  position: relative;
+  padding: 1.25rem;
+}
+
+.docket::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 1.25rem;
+  width: 2rem;
+  height: 6px;
+  background: var(--hazard);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 2px solid var(--line-strong);
+  background: var(--ink);
+  color: var(--paper-raised);
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 0.7rem 1.1rem;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-accent {
+  background: var(--hazard);
+  color: var(--hazard-ink);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.field input,
+.field select,
+.field textarea {
+  border: 2px solid var(--line-strong);
+  background: var(--paper-raised);
+  color: var(--ink);
+  padding: 0.65rem 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: 3px solid var(--hazard);
+  outline-offset: 0;
+}
+
+.error-banner {
+  border: 2px solid var(--rust);
+  color: var(--rust);
+  background: #f8e9e5;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.success-banner {
+  border: 2px solid var(--sage);
+  color: var(--sage);
+  background: #eaf0e8;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
