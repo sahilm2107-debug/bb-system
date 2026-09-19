@@ -1,74 +1,57 @@
-import { NextResponse } from "next/server";
-import { prisma } from "../../../../lib/db";
-import { getSessionUser } from "../../../../lib/auth";
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-function normalizeDate(dateStr) {
-  // Stores every log at midnight UTC for its calendar day, so the
-  // (employeeId, date) unique constraint reliably means "one row per day"
-  // regardless of what time it was saved.
-  const d = dateStr ? new Date(dateStr) : new Date();
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-}
+const prisma = new PrismaClient();
 
-// GET /api/employees/logs?date=2026-09-18 — every active employee plus
-// their log for that day (present:false, 0/0 boards if none saved yet).
 export async function GET(request) {
-  const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const { searchParams } = new URL(request.url);
-  const date = normalizeDate(searchParams.get("date"));
+  const dateString = searchParams.get("date"); 
+  const branch = searchParams.get("branch") || "Mafikeng";
 
-  const employees = await prisma.employee.findMany({ where: { active: true }, orderBy: { name: "asc" } });
-  const logs = await prisma.dailyWorkLog.findMany({ where: { date } });
-  const logByEmployee = Object.fromEntries(logs.map((l) => [l.employeeId, l]));
+  const targetDate = new Date(dateString + "T00:00:00.000Z");
 
-  const rows = employees.map((e) => ({
-    employee: e,
-    log: logByEmployee[e.id] || null,
-  }));
-
-  const totals = logs.reduce(
-    (acc, l) => ({
-      present: acc.present + (l.present ? 1 : 0),
-      boardsCut: acc.boardsCut + l.boardsCut,
-      boardsEdged: acc.boardsEdged + l.boardsEdged,
-    }),
-    { present: 0, boardsCut: 0, boardsEdged: 0 }
-  );
-
-  return NextResponse.json({ date: date.toISOString(), rows, totals });
-}
-
-// POST — upsert one employee's log for a given day.
-export async function POST(request) {
-  const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { employeeId, date, present, boardsCut, boardsEdged, notes } = await request.json();
-  if (!employeeId) {
-    return NextResponse.json({ error: "employeeId is required." }, { status: 400 });
-  }
-
-  const normalizedDate = normalizeDate(date);
-
-  const log = await prisma.dailyWorkLog.upsert({
-    where: { employeeId_date: { employeeId, date: normalizedDate } },
-    update: {
-      present: Boolean(present),
-      boardsCut: Number(boardsCut) || 0,
-      boardsEdged: Number(boardsEdged) || 0,
-      notes: notes || null,
-    },
-    create: {
-      employeeId,
-      date: normalizedDate,
-      present: Boolean(present),
-      boardsCut: Number(boardsCut) || 0,
-      boardsEdged: Number(boardsEdged) || 0,
-      notes: notes || null,
-    },
+  // Filter employees and logs by the active branch
+  const employees = await prisma.employee.findMany({
+    where: { active: true, branch }
   });
 
-  return NextResponse.json({ log });
+  const logs = await prisma.dailyWorkLog.findMany({
+    where: { date: targetDate, branch }
+  });
+
+  let totals = { present: 0, boardsCut: 0, boardsEdged: 0 };
+  const rows = employees.map(emp => {
+    const log = logs.find(l => l.employeeId === emp.id);
+    if (log && log.present) totals.present++;
+    if (log) {
+      totals.boardsCut += log.boardsCut;
+      totals.boardsEdged += log.boardsEdged;
+    }
+    return { employee: emp, log: log || null };
+  });
+
+  return NextResponse.json({ totals, rows });
+}
+
+export async function POST(request) {
+  const body = await request.json();
+  const { employeeId, date, present, boardsCut, boardsEdged } = body;
+  const targetDate = new Date(date + "T00:00:00.000Z");
+
+  // Find the employee to inherit their branch assignment
+  const emp = await prisma.employee.findUnique({ where: { id: employeeId } });
+
+  const log = await prisma.dailyWorkLog.upsert({
+    where: { employeeId_date: { employeeId, date: targetDate } },
+    update: { present, boardsCut: parseInt(boardsCut), boardsEdged: parseInt(boardsEdged) },
+    create: {
+      employeeId,
+      date: targetDate,
+      present,
+      boardsCut: parseInt(boardsCut),
+      boardsEdged: parseInt(boardsEdged),
+      branch: emp?.branch || "Mafikeng"
+    }
+  });
+  return NextResponse.json({ success: true, log });
 }

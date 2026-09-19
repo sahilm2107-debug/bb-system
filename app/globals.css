@@ -1,25 +1,18 @@
 @import url("https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap");
 
-/* ---------------------------------------------------------------------
-   Design tokens — B&B System
-   Inspired by a timber yard's paper order docket: kraft paper, stamped
-   crate lettering, and hazard-tape yellow for anything that needs eyes
-   on it. Hard edges, not rounded SaaS cards; a stamped slab display face
-   next to a plain working sans.
------------------------------------------------------------------------- */
 :root {
   --paper: #efe7d6;
   --paper-raised: #f7f1e4;
-  --ink: #2a251d;
-  --ink-soft: #5b5347;
+  --ink: #0f0d0a; /* Darkened for higher contrast */
+  --ink-soft: #3d352b; /* Darkened */
   --walnut: #5c3a22;
   --walnut-dark: #402813;
   --hazard: #e8a400;
-  --hazard-ink: #2a251d;
+  --hazard-ink: #0f0d0a;
   --rust: #b23b23;
   --sage: #4b6b45;
   --line: #d9cdb2;
-  --line-strong: #2a251d;
+  --line-strong: #0f0d0a;
 
   --font-display: "Zilla Slab", Georgia, serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
@@ -37,6 +30,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body);
+  font-weight: 500; /* Bolder base font */
   -webkit-font-smoothing: antialiased;
 }
 
@@ -52,7 +46,7 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700; /* Pushed to maximum bold */
   margin: 0;
   letter-spacing: -0.01em;
 }
@@ -63,8 +57,6 @@ h3 {
   letter-spacing: 0.02em;
 }
 
-/* Shared "docket" surface: a hard-edged card with a stamped corner tab,
-   used instead of the generic soft-shadow rounded card. */
 .docket {
   background: var(--paper-raised);
   border: 2px solid var(--line-strong);

@@ -67,11 +67,13 @@ function DetailPanel({ title, items, renderItem, onClose }) {
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [data, setData] = useState(null);
-  const [openPanel, setOpenPanel] = useState(null); // "pending" | "unanswered" | "day" | "week" | "month"
+  const [openPanel, setOpenPanel] = useState(null); 
 
   useEffect(() => {
+    const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
     fetch("/api/auth/me").then((r) => r.json()).then((d) => setUser(d.user));
-    fetch("/api/dashboard/metrics").then((r) => r.json()).then(setData);
+    // Fetches ONLY data for the active branch
+    fetch(`/api/dashboard/metrics?branch=${branch}`).then((r) => r.json()).then(setData);
   }, []);
 
   if (!data) {
@@ -157,7 +159,6 @@ export default function DashboardPage() {
           onClose={() => setOpenPanel(null)}
           renderItem={(o) =>
             o.body !== undefined ? (
-              // WhatsApp message item
               <div key={o.id} className="docket" style={{ padding: "0.85rem 1rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <strong>{o.fromName || o.fromNumber}</strong>
@@ -166,7 +167,6 @@ export default function DashboardPage() {
                 <div style={{ fontSize: "0.9rem", marginTop: "0.25rem" }}>{o.body}</div>
               </div>
             ) : (
-              // Order item
               <div key={o.id} className="docket" style={{ padding: "0.85rem 1rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <strong>{o.customerName}</strong>

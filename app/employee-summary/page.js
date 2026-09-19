@@ -35,6 +35,7 @@ function RowEditor({ row, date, onSaved, onDeleted }) {
     );
     if (!confirmed) return;
     setDeleting(true);
+    // Hits the API route we created in the previous step
     await fetch(`/api/employees/${row.employee.id}`, { method: "DELETE" });
     onDeleted();
   }
@@ -97,7 +98,8 @@ export default function EmployeeSummaryPage() {
 
   async function load() {
     setLoading(true);
-    const res = await fetch(`/api/employees/logs?date=${date}`);
+    const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
+    const res = await fetch(`/api/employees/logs?date=${date}&branch=${branch}`);
     const d = await res.json();
     setData(d);
     setLoading(false);
@@ -109,17 +111,19 @@ export default function EmployeeSummaryPage() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
 
   async function handleAddEmployee(e) {
     e.preventDefault();
     setAddError("");
+    const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
+    
     const res = await fetch("/api/employees", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newEmployee),
+      body: JSON.stringify({ ...newEmployee, branch }), // Automatically tags new employee to current branch
     });
+    
     const result = await res.json();
     if (!res.ok) {
       setAddError(result.error || "Couldn't add that employee.");

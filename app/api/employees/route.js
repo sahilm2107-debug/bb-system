@@ -1,32 +1,23 @@
-import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/db";
-import { getSessionUser } from "../../../lib/auth";
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-export async function GET() {
-  const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const employees = await prisma.employee.findMany({
-    where: { active: true },
-    orderBy: { name: "asc" },
-  });
-  return NextResponse.json({ employees });
-}
+const prisma = new PrismaClient();
 
 export async function POST(request) {
-  const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { employeeCode, name, role } = await request.json();
-  if (!employeeCode || !name) {
-    return NextResponse.json({ error: "Employee code and name are required." }, { status: 400 });
+  try {
+    const body = await request.json();
+    
+    const newEmployee = await prisma.employee.create({
+      data: {
+        employeeCode: body.employeeCode,
+        name: body.name,
+        role: body.role,
+        branch: body.branch || "Mafikeng" // Saves the branch sent from the frontend
+      }
+    });
+    
+    return NextResponse.json(newEmployee);
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to add employee. Ensure the Employee Code is unique." }, { status: 500 });
   }
-
-  const existing = await prisma.employee.findUnique({ where: { employeeCode } });
-  if (existing) {
-    return NextResponse.json({ error: `Employee code ${employeeCode} is already in use.` }, { status: 409 });
-  }
-
-  const employee = await prisma.employee.create({ data: { employeeCode, name, role: role || null } });
-  return NextResponse.json({ employee });
 }

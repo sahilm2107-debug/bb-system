@@ -1,42 +1,31 @@
-import { NextResponse } from "next/server";
-import { prisma } from "../../../../lib/db";
-import { getSessionUser } from "../../../../lib/auth";
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-function daysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d;
-}
+const prisma = new PrismaClient();
 
-export async function GET() {
-  const user = await getSessionUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET(request) {
+  // 1. Extract the branch from the URL (?branch=Mafikeng)
+  const { searchParams } = new URL(request.url);
+  const branch = searchParams.get("branch") || "Mafikeng";
 
+  // 2. Inject { branch } into every query
   const [pendingOrders, unanswered, tasksToday, notifications] = await Promise.all([
-    prisma.order.findMany({ where: { status: "pending" }, orderBy: { createdAt: "desc" } }),
-    prisma.whatsAppMessage.findMany({
-      where: { status: { in: ["unanswered", "escalated"] } },
-      orderBy: { receivedAt: "desc" },
-    }),
-    prisma.task.findMany({ where: { completed: false }, orderBy: { createdAt: "asc" } }),
-    prisma.notification.findMany({ where: { read: false }, orderBy: { createdAt: "desc" }, take: 10 }),
+    prisma.order.findMany({ where: { status: 'pending', branch } }),
+    prisma.whatsAppMessage.findMany({ where: { status: 'unanswered', branch } }),
+    prisma.task.findMany({ where: { completed: false, branch } }),
+    prisma.notification.findMany({ where: { read: false, branch } })
   ]);
 
-  const [lastDay, lastWeek, lastMonth] = await Promise.all([
-    prisma.order.findMany({ where: { createdAt: { gte: daysAgo(1) } }, orderBy: { createdAt: "desc" } }),
-    prisma.order.findMany({ where: { createdAt: { gte: daysAgo(7) } }, orderBy: { createdAt: "desc" } }),
-    prisma.order.findMany({ where: { createdAt: { gte: daysAgo(30) } }, orderBy: { createdAt: "desc" } }),
-  ]);
+  const now = new Date();
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  return NextResponse.json({
-    pendingOrders,
-    unanswered,
-    tasksToday,
-    notifications,
-    summaries: {
-      lastDay,
-      lastWeek,
-      lastMonth,
-    },
-  });
+  const summaries = {
+    lastDay: await prisma.order.findMany({ where: { branch, createdAt: { gte: oneDayAgo } } }),
+    lastWeek: await prisma.order.findMany({ where: { branch, createdAt: { gte: oneWeekAgo } } }),
+    lastMonth: await prisma.order.findMany({ where: { branch, createdAt: { gte: oneMonthAgo } } })
+  };
+
+  return NextResponse.json({ pendingOrders, unanswered, tasksToday, notifications, summaries });
 }

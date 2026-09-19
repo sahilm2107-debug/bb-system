@@ -31,6 +31,7 @@ model InventoryItem {
   price     Float?
   supplier  String?
   notes     String?
+  branch    String   @default("Mafikeng") // Added for branch isolation
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -45,6 +46,7 @@ model Order {
   status        String    @default("pending")
   channel       String    @default("whatsapp")
   summary       String?
+  branch        String    @default("Mafikeng") // Added for branch isolation
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   answeredAt    DateTime?
@@ -56,6 +58,7 @@ model Task {
   description String?
   dueDate     DateTime?
   completed   Boolean   @default(false)
+  branch      String    @default("Mafikeng") // Added for branch isolation
   createdAt   DateTime  @default(now())
 }
 
@@ -66,6 +69,7 @@ model WhatsAppMessage {
   body        String
   direction   String    @default("inbound")
   status      String    @default("unanswered")
+  branch      String    @default("Mafikeng") // Added for branch isolation
   receivedAt  DateTime  @default(now())
   answeredAt  DateTime?
   escalatedAt DateTime?
@@ -77,6 +81,7 @@ model Notification {
   type             String
   message          String
   read             Boolean  @default(false)
+  branch           String   @default("Mafikeng") // Added for branch isolation
   createdAt        DateTime @default(now())
   relatedMessageId String?
 }
@@ -87,6 +92,7 @@ model Employee {
   name         String
   role         String?
   active       Boolean        @default(true)
+  branch       String         @default("Mafikeng") // Added for branch isolation
   createdAt    DateTime       @default(now())
   logs         DailyWorkLog[]
 }
@@ -100,6 +106,7 @@ model DailyWorkLog {
   boardsCut   Int      @default(0)
   boardsEdged Int      @default(0)
   notes       String?
+  branch      String   @default("Mafikeng") // Added for branch isolation
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -119,6 +126,7 @@ model CutlistRequest {
   confirmedAt      DateTime?
   rejectedAt       DateTime?
   relatedMessageId String?
+  branch           String        @default("Mafikeng") // Added for branch isolation
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   items            CutlistItem[]
