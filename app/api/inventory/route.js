@@ -39,7 +39,6 @@ export async function POST(request) {
     const body = await request.json();
     const branch = body.branch || "Mafikeng";
 
-    // Handle Bulk CSV Import
     if (body.bulk) {
       const created = await prisma.inventoryItem.createMany({
         data: body.bulk.map(item => ({
@@ -53,12 +52,11 @@ export async function POST(request) {
           supplier: item.supplier || "",
           branch: item.branch || branch
         })),
-        skipDuplicates: true // Prevents crashing if a tag number already exists
+        skipDuplicates: true
       });
       return NextResponse.json({ success: true, created: created.count });
     }
 
-    // Handle Single Item Addition
     const newItem = await prisma.inventoryItem.create({
       data: {
         tagNumber: body.tagNumber,
@@ -75,7 +73,35 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, item: newItem });
   } catch (error) {
-    console.error(error);
     return NextResponse.json({ error: "Failed to add item. Tag number might already exist." }, { status: 400 });
+  }
+}
+
+// NEW: Handle Updating Existing Items
+export async function PUT(request) {
+  try {
+    const body = await request.json();
+    const { id, tagNumber, name, database, category, quantity, unit, price, supplier } = body;
+    
+    if (!id) return NextResponse.json({ error: "Item ID required" }, { status: 400 });
+
+    const updatedItem = await prisma.inventoryItem.update({
+      where: { id },
+      data: {
+        tagNumber,
+        name,
+        database: database?.toLowerCase(),
+        category,
+        quantity: parseInt(quantity) || 0,
+        unit: unit || "",
+        price: parseFloat(price) || null,
+        supplier: supplier || "",
+      }
+    });
+
+    return NextResponse.json({ success: true, item: updatedItem });
+  } catch (error) {
+    console.error("Update Error:", error);
+    return NextResponse.json({ error: "Failed to update item." }, { status: 400 });
   }
 }

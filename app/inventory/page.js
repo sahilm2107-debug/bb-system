@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Nav from "../../components/Nav";
 
 const EMPTY_FORM = {
+  id: null,
   tagNumber: "",
   name: "",
   category: "",
@@ -30,10 +31,8 @@ export default function InventoryPage() {
   const [user, setUser] = useState(null);
   const [database, setDatabase] = useState("boards");
   
-  // Custom categories fetched from DB
   const [categories, setCategories] = useState({ boards: [], hardware: [] });
   
-  // Modals and form state
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [newCatName, setNewCatName] = useState("");
   const [newCatDatabase, setNewCatDatabase] = useState("Boards");
@@ -43,6 +42,7 @@ export default function InventoryPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState("");
   const [importMessage, setImportMessage] = useState("");
@@ -56,7 +56,6 @@ export default function InventoryPage() {
     setCategory("");
   }, [database]);
 
-  // Fetch custom categories from the new Postgres table
   async function loadCustomCategories() {
     const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
     const res = await fetch(`/api/inventory/categories?branch=${branch}`);
@@ -80,7 +79,7 @@ export default function InventoryPage() {
     });
     setShowCategoryModal(false);
     setNewCatName("");
-    loadCustomCategories(); // Refresh dropdowns immediately
+    loadCustomCategories(); 
   }
 
   async function loadItems() {
@@ -103,20 +102,46 @@ export default function InventoryPage() {
 
   const categoryOptions = useMemo(() => categories[database] || [], [categories, database]);
 
-  async function handleAddItem(e) {
+  // Open modal for a NEW item
+  function handleAddClick() {
+    setForm(EMPTY_FORM);
+    setFormError("");
+    setShowAdd(true);
+  }
+
+  // Open modal for an EXISTING item
+  function handleEditClick(item) {
+    setForm({
+      id: item.id,
+      tagNumber: item.tagNumber || "",
+      name: item.name || "",
+      category: item.category || "",
+      quantity: item.quantity || "",
+      unit: item.unit || "",
+      price: item.price || "",
+      supplier: item.supplier || "",
+    });
+    setFormError("");
+    setShowAdd(true);
+  }
+
+  // Handles both Create (POST) and Update (PUT)
+  async function handleSaveItem(e) {
     e.preventDefault();
     setFormError("");
     const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
     
+    const method = form.id ? "PUT" : "POST";
+    
     const res = await fetch("/api/inventory", {
-      method: "POST",
+      method: method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, database, branch }),
     });
     
     const data = await res.json();
     if (!res.ok) {
-      setFormError(data.error || "Couldn't add that item.");
+      setFormError(data.error || "Couldn't save that item.");
       return;
     }
     setForm(EMPTY_FORM);
@@ -134,7 +159,7 @@ export default function InventoryPage() {
     const rows = parseCsv(text).map((r) => ({ 
       ...r, 
       database: r.database || database,
-      branch // Tag uploaded CSV items to the active branch
+      branch
     }));
     
     const res = await fetch("/api/inventory", {
@@ -165,8 +190,6 @@ export default function InventoryPage() {
             <p style={{ color: "var(--ink-soft)" }}>Search by tag number or name — case doesn't matter.</p>
           </div>
           <div style={{ display: "flex", gap: "0.6rem" }}>
-            
-            {/* NEW ADD CATEGORY BUTTON */}
             <button 
               onClick={() => setShowCategoryModal(true)}
               className="btn btn-ghost"
@@ -174,12 +197,11 @@ export default function InventoryPage() {
             >
               + Add Category
             </button>
-
             <label className="btn btn-ghost" style={{ borderColor: "var(--line-strong)", cursor: "pointer" }}>
               Import CSV
               <input type="file" accept=".csv" onChange={handleCsvUpload} style={{ display: "none" }} />
             </label>
-            <button className="btn btn-accent" onClick={() => setShowAdd(true)}>
+            <button className="btn btn-accent" onClick={handleAddClick}>
               + Add item
             </button>
           </div>
@@ -237,7 +259,7 @@ export default function InventoryPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
             <thead>
               <tr style={{ borderBottom: "2px solid var(--line-strong)", textAlign: "left" }}>
-                {["Tag", "Name", "Category", "Qty", "Unit", "Price", "Supplier"].map((h) => (
+                {["Tag", "Name", "Category", "Qty", "Unit", "Price", "Supplier", "Action"].map((h) => (
                   <th key={h} style={{ padding: "0.75rem 1rem", color: "var(--ink-soft)", fontSize: "0.78rem", textTransform: "uppercase" }}>
                     {h}
                   </th>
@@ -247,11 +269,11 @@ export default function InventoryPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: "1.5rem", color: "var(--ink-soft)" }}>Loading…</td>
+                  <td colSpan={8} style={{ padding: "1.5rem", color: "var(--ink-soft)" }}>Loading…</td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: "1.5rem", color: "var(--ink-soft)" }}>
+                  <td colSpan={8} style={{ padding: "1.5rem", color: "var(--ink-soft)" }}>
                     No items match. Check the spelling or clear the filter.
                   </td>
                 </tr>
@@ -265,6 +287,14 @@ export default function InventoryPage() {
                     <td style={{ padding: "0.65rem 1rem" }}>{item.unit || "—"}</td>
                     <td style={{ padding: "0.65rem 1rem" }}>{item.price != null ? `R${item.price}` : "—"}</td>
                     <td style={{ padding: "0.65rem 1rem" }}>{item.supplier || "—"}</td>
+                    <td style={{ padding: "0.65rem 1rem" }}>
+                      <button 
+                        onClick={() => handleEditClick(item)}
+                        style={{ color: "var(--hazard)", background: "none", border: "none", cursor: "pointer", fontWeight: "600", fontSize: "0.85rem" }}
+                      >
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -273,16 +303,18 @@ export default function InventoryPage() {
         </div>
       </main>
 
-      {/* ADD INVENTORY ITEM MODAL */}
+      {/* UNIFIED ADD / EDIT INVENTORY ITEM MODAL */}
       {showAdd && (
         <div
           style={{ position: "fixed", inset: 0, background: "rgba(42,37,29,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}
           onClick={() => setShowAdd(false)}
         >
           <div className="docket" style={{ width: "min(480px, 92vw)" }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ fontSize: "1.3rem", marginBottom: "1rem" }}>Add item — {database}</h2>
+            <h2 style={{ fontSize: "1.3rem", marginBottom: "1rem" }}>
+              {form.id ? "Edit item" : "Add item"} — {database}
+            </h2>
             {formError && <div className="error-banner">{formError}</div>}
-            <form onSubmit={handleAddItem}>
+            <form onSubmit={handleSaveItem}>
               <div className="field">
                 <label>Tag number</label>
                 <input required value={form.tagNumber} onChange={(e) => setForm({ ...form, tagNumber: e.target.value })} />
@@ -323,7 +355,9 @@ export default function InventoryPage() {
                 </div>
               </div>
               <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.5rem" }}>
-                <button type="submit" className="btn btn-accent" style={{ flex: 1 }}>Save item</button>
+                <button type="submit" className="btn btn-accent" style={{ flex: 1 }}>
+                  {form.id ? "Update item" : "Save item"}
+                </button>
                 <button type="button" className="btn btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
               </div>
             </form>
@@ -331,7 +365,7 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* NEW ADD CATEGORY MODAL */}
+      {/* ADD CATEGORY MODAL */}
       {showCategoryModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(42,37,29,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
           <div className="docket" style={{ width: "min(400px, 90vw)", background: "var(--paper-raised)" }}>
@@ -373,5 +407,6 @@ export default function InventoryPage() {
           </div>
         </div>
       )}
-
     </div>
+  );
+}
