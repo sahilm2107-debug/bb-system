@@ -6,29 +6,24 @@ const prisma = new PrismaClient();
 // Advanced NLU Parser for Carpentry Slang
 function extractCutlistItems(text) {
   const items = [];
-  // Split message by newlines or the word "and" to catch multiple boards in one text
   const lines = text.split(/\n|\band\b/i);
 
   for (const line of lines) {
     if (!line.trim()) continue;
 
-    // 1. Extract Dimensions: Looks for "1800x400" or "2750 x 1830 x 16"
     const dimMatch = line.match(/(\d+)\s*[xX*]\s*(\d+)(?:\s*[xX*]\s*(\d+))?/);
-    if (!dimMatch) continue; // If no dimensions are found, skip to the next line
+    if (!dimMatch) continue;
 
     const length = parseFloat(dimMatch[1]);
     const width = parseFloat(dimMatch[2]);
     const thickness = dimMatch[3] ? parseFloat(dimMatch[3]) : null;
 
-    // 2. Extract Quantity: Looks for "2x", "2 x", "4 of", or defaults to 1
     const qtyMatch = line.match(/(?:^|\s)(\d+)\s*(?:x|of|boards|pieces)/i);
     const quantity = qtyMatch ? parseInt(qtyMatch[1]) : 1;
 
-    // 3. Extract Material: Matches common South African board types
     const materialMatch = line.match(/(gloss|melamine|alpine|supawood|mdf|plywood|chipboard|pg bison|oak|cherry)/i);
     const material = materialMatch ? materialMatch[1].toLowerCase() : "Unspecified";
 
-    // 4. Extract Edging Matrix (High Precision)
     let edgingLong = 0;
     let edgingShort = 0;
     let edgingLabel = "None";
@@ -70,23 +65,19 @@ export async function POST(req) {
   try {
     const body = await req.json();
     
-    // Extract WhatsApp Cloud API payload data
     const messageData = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
     const customerPhone = messageData?.from || "Unknown";
     const text = messageData?.text?.body;
     
-    // Assume Mafikeng as default entry point, can be mapped via phone number later
     const branch = "Mafikeng"; 
 
     if (!text) {
       return NextResponse.json({ success: true, note: "Non-text message acknowledged." });
     }
 
-    // Run the High-Precision Parser
     const parsedItems = extractCutlistItems(text);
 
     if (parsedItems.length > 0) {
-      // AI Confidence High: Successfully extracted dimensions and edging
       const cutlistRequest = await prisma.cutlistRequest.create({
         data: {
           source: "whatsapp",
@@ -105,7 +96,6 @@ export async function POST(req) {
       return NextResponse.json({ success: true, action: "Cutlist Generated", requestId: cutlistRequest.id });
       
     } else {
-      // AI Confidence Low: Trigger 5-Minute SLA Dashboard Alert
       await prisma.whatsAppMessage.create({
         data: {
           fromNumber: customerPhone,
