@@ -325,14 +325,18 @@ export default function InventoryPage() {
               </div>
               <div className="field">
                 <label>Category</label>
-                <select required value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                  <option value="">Select…</option>
+                <input 
+                  required 
+                  list="category-options"
+                  placeholder="Type or select a category..."
+                  value={form.category} 
+                  onChange={(e) => setForm({ ...form, category: e.target.value })} 
+                />
+                <datalist id="category-options">
                   {(categories[database] || []).map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
+                    <option key={c} value={c} />
                   ))}
-                </select>
+                </datalist>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
                 <div className="field">

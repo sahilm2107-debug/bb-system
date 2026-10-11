@@ -1,0 +1,13 @@
+tagNumber, name, database, category, quantity, unit, price, supplier
+B-CHIP-01, 2750 x 1830 x 16mm Plain Chipboard, boards, Chip, 85, sheet, 450.00, PG Bison
+B-CHIP-02, 2750 x 1830 x 12mm Plain Chipboard, boards, Chip, 40, sheet, 380.00, PG Bison
+B-GLO-01, 2750 x 1830 x 16mm Ice White Gloss, boards, Gloss, 30, sheet, 1250.00, Sonae Arauco
+B-GLO-02, 2750 x 1830 x 16mm Charcoal Gloss, boards, Gloss, 15, sheet, 1350.00, Sonae Arauco
+B-MAS-01, 2440 x 1220 x 3mm Standard Masonite, boards, Masonite, 120, sheet, 145.00, Evowood
+B-MAS-02, 2440 x 1220 x 3mm White Backed Masonite, boards, Masonite, 80, sheet, 195.00, Evowood
+B-WMEL-01, 2750 x 1830 x 16mm White Melamine, boards, White Melamine, 210, sheet, 550.00, PG Bison
+B-WMEL-02, 2750 x 1830 x 12mm White Melamine, boards, White Melamine, 65, sheet, 490.00, PG Bison
+B-T600-01, 3600 x 600 x 32mm Formica Black Slate, boards, Top 600, 25, sheet, 850.00, PG Bison
+B-T600-02, 3600 x 600 x 32mm Formica White Quartz, boards, Top 600, 30, sheet, 850.00, PG Bison
+B-T900-01, 3600 x 900 x 32mm Formica Black Slate, boards, Top 900, 10, sheet, 1350.00, PG Bison
+B-T900-02, 3600 x 900 x 32mm Formica White Quartz, boards, Top 900, 12, sheet, 1350.00, PG Bison

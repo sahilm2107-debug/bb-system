@@ -1,0 +1,13 @@
+tagNumber, name, database, category, quantity, unit, price, supplier
+H-HIN-01, Soft Close Concealed Hinge, hardware, Hinges, 450, each, 18.50, Larson
+H-HIN-02, Standard Concealed Hinge, hardware, Hinges, 800, each, 9.00, Roco
+H-HAN-01, 160mm Bar Handle Brushed Steel, hardware, Handles, 150, each, 28.00, Roco
+H-HAN-02, 128mm Bow Handle Matte Black, hardware, Handles, 220, each, 22.00, Larson
+H-SCR-01, 4x16mm Chipboard Screws (1000), hardware, Screws, 45, box, 85.00, Eureka
+H-SCR-02, 4x40mm Chipboard Screws (500), hardware, Screws, 30, box, 110.00, Eureka
+H-RUN-01, 450mm Ball Bearing Runners (Pair), hardware, Runners, 85, set, 45.00, Larson
+H-RUN-02, 500mm Soft Close Drawer Runners, hardware, Runners, 40, set, 120.00, Roco
+H-EDG-01, 22mm White Melamine Edging (Unglued) 100m, hardware, Edging, 12, roll, 95.00, Davids
+H-EDG-02, 22mm Impact Edging White 100m, hardware, Edging, 8, roll, 280.00, Davids
+H-LEG-01, 150mm Adjustable Plastic Cabinet Leg, hardware, Legs, 320, each, 5.50, Roco
+H-LEG-02, 100mm Adjustable Aluminum Leg, hardware, Legs, 100, each, 25.00, Larson
