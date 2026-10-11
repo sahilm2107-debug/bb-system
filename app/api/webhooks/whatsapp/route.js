@@ -3,7 +3,6 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Advanced NLU Parser for Carpentry Slang
 function extractCutlistItems(text) {
   const items = [];
   const lines = text.split(/\n|\band\b/i);
@@ -12,7 +11,7 @@ function extractCutlistItems(text) {
     if (!line.trim()) continue;
 
     const dimMatch = line.match(/(\d+)\s*[xX*]\s*(\d+)(?:\s*[xX*]\s*(\d+))?/);
-    if (!dimMatch) continue;
+    if (!dimMatch) continue; 
 
     const length = parseFloat(dimMatch[1]);
     const width = parseFloat(dimMatch[2]);
