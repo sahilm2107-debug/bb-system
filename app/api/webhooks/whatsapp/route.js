@@ -115,7 +115,7 @@ export async function POST(req) {
         }
       });
 
-      console.log([AI HALTED] Complex query from . Triggering SLA alert.);
+      console.log(`[AI HALTED] Complex query from ${customerPhone}. Triggering SLA alert.`);
       return NextResponse.json({ success: true, action: "Human Fallback Triggered" });
     }
 
