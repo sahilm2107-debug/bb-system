@@ -1,5 +1,15 @@
 @import url("https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap");
-
+:root {
+  --ink: #f5f5f5;
+  --ink-soft: #a3a3a3;
+  --line: #262626;
+  --line-strong: #404040;
+  --rust: #ef4444;
+  --hazard: #eab308;
+  --paper-raised: #ffffff;
+  --walnut-dark: #1a1814;
+  --font-display: system-ui, -apple-system, sans-serif;
+}
 :root {
   --paper: #efe7d6;
   --paper-raised: #f7f1e4;

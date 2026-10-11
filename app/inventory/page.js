@@ -29,7 +29,15 @@ function parseCsv(text) {
 export default function InventoryPage() {
   const [user, setUser] = useState(null);
   const [database, setDatabase] = useState("boards");
+  
+  // Custom categories fetched from DB
   const [categories, setCategories] = useState({ boards: [], hardware: [] });
+  
+  // Modals and form state
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatDatabase, setNewCatDatabase] = useState("Boards");
+
   const [category, setCategory] = useState("");
   const [q, setQ] = useState("");
   const [items, setItems] = useState([]);
@@ -41,11 +49,39 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetch("/api/auth/me").then((r) => r.json()).then((d) => setUser(d.user));
+    loadCustomCategories();
   }, []);
 
   useEffect(() => {
     setCategory("");
   }, [database]);
+
+  // Fetch custom categories from the new Postgres table
+  async function loadCustomCategories() {
+    const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
+    const res = await fetch(`/api/inventory/categories?branch=${branch}`);
+    if (res.ok) {
+      const data = await res.json();
+      const dbCategories = { boards: [], hardware: [] };
+      data.forEach(cat => {
+        if (cat.database.toLowerCase() === "boards") dbCategories.boards.push(cat.name);
+        if (cat.database.toLowerCase() === "hardware") dbCategories.hardware.push(cat.name);
+      });
+      setCategories(dbCategories);
+    }
+  }
+
+  async function handleAddCategory() {
+    const branch = localStorage.getItem("bb_active_branch") || "Mafikeng";
+    await fetch("/api/inventory/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newCatName, database: newCatDatabase, branch })
+    });
+    setShowCategoryModal(false);
+    setNewCatName("");
+    loadCustomCategories(); // Refresh dropdowns immediately
+  }
 
   async function loadItems() {
     setLoading(true);
@@ -57,7 +93,6 @@ export default function InventoryPage() {
     const res = await fetch(`/api/inventory?${params.toString()}`);
     const data = await res.json();
     setItems(data.items || []);
-    if (data.categories) setCategories(data.categories);
     setLoading(false);
   }
 
@@ -122,12 +157,24 @@ export default function InventoryPage() {
     <div style={{ display: "flex" }}>
       <Nav user={user} />
       <main style={{ flex: 1, padding: "2rem", maxWidth: "1200px" }}>
+        
+        {/* HEADER SECTION */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
           <div>
             <h1 style={{ fontSize: "1.8rem" }}>Inventory</h1>
             <p style={{ color: "var(--ink-soft)" }}>Search by tag number or name — case doesn't matter.</p>
           </div>
           <div style={{ display: "flex", gap: "0.6rem" }}>
+            
+            {/* NEW ADD CATEGORY BUTTON */}
+            <button 
+              onClick={() => setShowCategoryModal(true)}
+              className="btn btn-ghost"
+              style={{ borderColor: "var(--hazard)", color: "var(--hazard)" }}
+            >
+              + Add Category
+            </button>
+
             <label className="btn btn-ghost" style={{ borderColor: "var(--line-strong)", cursor: "pointer" }}>
               Import CSV
               <input type="file" accept=".csv" onChange={handleCsvUpload} style={{ display: "none" }} />
@@ -140,6 +187,7 @@ export default function InventoryPage() {
 
         {importMessage && <div className="success-banner">{importMessage}</div>}
 
+        {/* DATABASE TABS */}
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
           {["boards", "hardware"].map((db) => (
             <button
@@ -156,6 +204,7 @@ export default function InventoryPage() {
           ))}
         </div>
 
+        {/* SEARCH & FILTERS */}
         <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
           <input
             placeholder="Search by tag number or name…"
@@ -183,6 +232,7 @@ export default function InventoryPage() {
           </select>
         </div>
 
+        {/* TABLE */}
         <div className="docket" style={{ padding: 0, overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9rem" }}>
             <thead>
@@ -223,6 +273,7 @@ export default function InventoryPage() {
         </div>
       </main>
 
+      {/* ADD INVENTORY ITEM MODAL */}
       {showAdd && (
         <div
           style={{ position: "fixed", inset: 0, background: "rgba(42,37,29,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}
@@ -279,6 +330,48 @@ export default function InventoryPage() {
           </div>
         </div>
       )}
+
+      {/* NEW ADD CATEGORY MODAL */}
+      {showCategoryModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(42,37,29,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+          <div className="docket" style={{ width: "min(400px, 90vw)", background: "var(--paper-raised)" }}>
+            <h2 style={{ fontSize: "1.3rem", marginBottom: "1rem", color: "var(--ink)" }}>Add New Category</h2>
+            
+            <div style={{ marginBottom: "1rem" }}>
+              <label style={{ display: "block", fontSize: "0.85rem", color: "var(--ink-soft)", marginBottom: "0.5rem" }}>Database</label>
+              <select 
+                value={newCatDatabase}
+                onChange={(e) => setNewCatDatabase(e.target.value)}
+                style={{ width: "100%", padding: "0.75rem", background: "var(--walnut-dark)", color: "var(--paper-raised)", border: "1px solid var(--line-strong)", borderRadius: "4px" }}
+              >
+                <option value="Boards">Boards</option>
+                <option value="Hardware">Hardware</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "2rem" }}>
+              <label style={{ display: "block", fontSize: "0.85rem", color: "var(--ink-soft)", marginBottom: "0.5rem" }}>Category Name</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Gloss, Hinges..."
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                style={{ width: "100%", padding: "0.75rem", background: "var(--walnut-dark)", color: "var(--paper-raised)", border: "1px solid var(--line-strong)", borderRadius: "4px" }}
+              />
+            </div>
+
+            <div style={{ display: "flex", gap: "1rem", justifyContent: "flex-end" }}>
+              <button onClick={() => setShowCategoryModal(false)} className="btn btn-ghost" style={{ color: "var(--ink-soft)" }}>Cancel</button>
+              <button 
+                onClick={handleAddCategory}
+                className="btn"
+                style={{ background: "var(--hazard)", color: "var(--walnut-dark)", fontWeight: "bold", border: "none", borderRadius: "4px", padding: "0.5rem 1rem", cursor: "pointer" }}
+              >
+                Save Category
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
-  );
-}

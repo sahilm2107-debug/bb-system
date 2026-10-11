@@ -113,6 +113,15 @@ model DailyWorkLog {
   @@unique([employeeId, date])
   @@index([date])
 }
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  database  String   // e.g., "Boards" or "Hardware"
+  branch    String   @default("Mafikeng")
+  createdAt DateTime @default(now())
+
+  @@unique([name, database, branch]) // Prevents duplicate categories in the same branch
+}
 
 model CutlistRequest {
   id               String        @id @default(cuid())
