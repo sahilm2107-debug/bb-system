@@ -101,7 +101,7 @@ export async function POST(req) {
         }
       });
 
-      console.log([AI SUCCESS] Precise Cutlist Generated for );
+      console.log(`[AI SUCCESS] Precise Cutlist Generated for ${customerPhone}`);
       return NextResponse.json({ success: true, action: "Cutlist Generated", requestId: cutlistRequest.id });
       
     } else {
